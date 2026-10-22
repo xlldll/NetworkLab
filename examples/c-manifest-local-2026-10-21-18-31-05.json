@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "synthetic": true,
+  "run_id": "2026-10-21-18-31-05-local",
+  "run_uuid": "d762a3bc-12ac-4567-8b9e-aabbccddeeff",
+  "correlation_id": null,
+  "role": "C",
+  "module_id": "c-inventory",
+  "scope_id": "local",
+  "target_id": null,
+  "server_id": null,
+  "profile": null,
+  "started_at": "2026-10-21T18:31:05+08:00",
+  "finished_at": "2026-10-21T18:31:05+08:00",
+  "duration_ms": 0,
+  "status": "completed",
+  "exit_code": 0,
+  "report_type": "manifest",
+  "task_kind": "measurement",
+  "networklab_version": "0.1.0",
+  "requested_tests": [
+    "schema-smoke"
+  ],
+  "effective_parameters": {
+    "synthetic_only": true
+  },
+  "files": [
+    {
+      "path": "c-summary-local-2026-10-21-18-31-05.json",
+      "kind": "summary",
+      "format": "json",
+      "size_bytes": 1140,
+      "sha256": "b678011a3a8f939dc16c8a573245352429a713a91692b37b0dca16dd28c1b517"
+    },
+    {
+      "path": "c-synthetic-local-2026-10-21-18-31-05.txt",
+      "kind": "raw",
+      "format": "txt",
+      "size_bytes": 59,
+      "sha256": "31a95738a4eb573ab146fdd53c37336dd184a7537c9edc1e23d1c4ce79684823",
+      "test_id": "schema-smoke"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}
