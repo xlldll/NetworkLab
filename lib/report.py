@@ -335,7 +335,7 @@ def _lock_reservation(folder, run_id):
     return lock
 
 
-def finalize(context, work, worker_rc, started_monotonic, networklab_version='0.1.0'):
+def finalize(context, work, worker_rc, started_monotonic, networklab_version=None):
     """Publish only explicit worker handoff; return manifest path or None.
 
     The worker exit code is authoritative. A worker cannot assert completed if its
@@ -373,6 +373,13 @@ def finalize(context, work, worker_rc, started_monotonic, networklab_version='0.
     if status != 'completed':
         root_warnings = root_warnings + [dict(code='WORKER_STATUS', message='worker ended with exit code %s' % worker_rc,
                                               test_id=None)]
+    if networklab_version is None:
+        # Read the trusted installed source version, never an untrusted env var.
+        raw_version = (Path(__file__).with_name('common.sh')).read_text('utf-8')
+        match = re.search(r"(?m)^NETLAB_VERSION='([0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?)'$", raw_version)
+        if match is None:
+            fail('installed NetworkLab version unavailable')
+        networklab_version = match.group(1)
     identity = dict(schema_version='1.0', synthetic=handoff['synthetic'], run_id=context['run_id'],
                     run_uuid=context['run_uuid'], correlation_id=context['correlation_id'],
                     role=context['role'], module_id=context['module_id'], scope_id=scope,

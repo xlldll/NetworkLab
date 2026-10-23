@@ -1,8 +1,8 @@
 # NetworkLab
 
-**NetworkLab v0.1.1 Skeleton** 是一套可在 macOS（Client，C）與 Linux VPS（Server，S）上運作的網路測試系統骨架。目標是將環境盤點、網路測試、跨端測量、報告保存與結果檢查整合在一套可重複使用的命令介面中。
+**NetworkLab v0.1.1 Skeleton + Phase D01 development** 是一套可在 macOS（Client，C）與 Linux VPS（Server，S）上運作的網路測試系統骨架。目標是將環境盤點、網路測試、跨端測量、報告保存與結果檢查整合在一套可重複使用的命令介面中。
 
-> **功能邊界**：目前版本是 **Skeleton，不是已完成的網路測速工具**。九個正式測量／服務模組仍未實作，會返回 `NOT_IMPLEMENTED`（退出碼 `8`）。`self-test` 使用合成資料驗證 Runner 與報告管線，**不會對外執行真實 TCP MTR、iperf3、網路品質或代理測試**。請勿把它的 PASS 當作線路品質證據。
+> **功能邊界**：目前版本是 **Skeleton，不是已完成的網路測速工具**。Phase D01 開發樹中，`s-inventory` 已實作 Linux VPS 唯讀系統盤點；其餘八個正式 Worker 仍返回 `NOT_IMPLEMENTED`（退出碼 `8`）。這不代表 v0.1.1 Tag 已改變。`self-test` 使用合成資料驗證 Runner 與報告管線，**不會對外執行真實 TCP MTR、iperf3、網路品質或代理測試**。請勿把它的 PASS 當作線路品質證據。
 
 ## 平台與相依性
 
@@ -48,7 +48,7 @@ macOS 預設安裝 C 端，Linux 預設安裝 S 端。程式位於 `~/.networkla
 
 已可使用的基礎設施包括：嚴格 CLI、互動入口、C／S 設定驗證、C 端 VPS 目標清單、Runner 與 Worker Context 契約、隔離的合成 Self-test、Manifest／Summary／Raw Data 報告生成、SHA-256 校驗與結果瀏覽，以及固定 GitHub Release 版本的檢查／更新／回滾流程。
 
-**尚未實作的實際功能**：C 端 `inventory`、`standalone`、`paired`、`proxy`、`collect`；S 端 `inventory`、`toolbox`、`service`、`scheduler`。沒有正式量測 Worker 時不會建立假的測速報告。
+**D01 已實作（僅目前開發樹）**：S 端 `inventory` 可離線讀取 VPS 的系統、網卡、TCP 核心參數並產生 `synthetic=false` 真實本機盤點報告，不執行主動網路測量。**尚未實作**：C 端五個 Worker；S 端 `toolbox`、`service`、`scheduler`。舊 Tag／Release 均不修改。
 
 ## 配置與資料
 

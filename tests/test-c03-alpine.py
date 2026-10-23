@@ -190,9 +190,10 @@ def acceptance(keep=False, compat_smoke=False):
         bad = run([launcher, 'nonexistent-c03-command'], env)
         check(bad.returncode == 2, 'unknown public command returns usage 2')
         placeholder = run([launcher, 'inventory', '--non-interactive'], env)
-        check(placeholder.returncode == 8, 'not implemented inventory returns 8')
-        check(not list((lab / 'results').rglob('*.json')),
-              'stub module produces no fabricated measurements')
+        check(placeholder.returncode == 0, 'D01 offline system inventory returns 0')
+        manifests = list((lab / 'results').rglob('*-manifest-*.json'))
+        check(len(manifests) == 1 and json.loads(manifests[0].read_text())['synthetic'] is False,
+              'D01 publishes only real local observations; no network probing')
 
         # No cron/system service edits. Schedules in s.conf are declarative only.
         check(snapshot_system_schedules() == service_before,

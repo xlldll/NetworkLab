@@ -215,10 +215,10 @@ PYWORK
 
     def test_runner_uses_b08_validation_and_context(self):
         self.path.write_text(GOOD.replace('time = 20:30', 'time = 28:30'))
-        self.assertEqual(self.cli('inventory','--non-interactive').returncode, 3)
+        self.assertEqual(self.cli('toolbox','--modules','netquality','--non-interactive').returncode, 3)
         self.assertFalse((self.home/'tmp').exists())
         self.path.write_text(GOOD)
-        p = self.cli('inventory','--non-interactive')
+        p = self.cli('toolbox','--modules','netquality','--non-interactive')
         self.assertEqual(p.returncode, 8, p.stderr)
         self.assertFalse((self.home/'tmp').exists())
         p = self.cli('toolbox','--modules','netquality','--profile','deep','--non-interactive')

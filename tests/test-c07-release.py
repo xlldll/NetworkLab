@@ -136,7 +136,13 @@ class C07Tests(unittest.TestCase):
     def test_skeleton_worker_cannot_claim_implemented(self):
         items = [(n, b'NETLAB_IMPLEMENTED_V1\n' if n == 's/s-toolbox.sh' else b)
                  for n, b in fixture_files()]
-        with self.assertRaisesRegex(mod.AuditError, 'unexpectedly marked implemented'):
+        with self.assertRaisesRegex(mod.AuditError, 'implementation marker differs'):
+            mod.inspect_zip(make_zip(items), TAG)
+
+    def test_d01_implemented_worker_cannot_lose_marker(self):
+        items = [(n, b'NETLAB_PLACEHOLDER_V1\n' if n == 's/s-inventory.sh' else b)
+                 for n, b in fixture_files()]
+        with self.assertRaisesRegex(mod.AuditError, 'implementation marker differs'):
             mod.inspect_zip(make_zip(items), TAG)
 
     def test_cli_requires_pinned_tag_and_asset_pair(self):
@@ -157,7 +163,7 @@ class C07Tests(unittest.TestCase):
                 shutil.copy2(str(ROOT / name), str(dest))
             worker = p / 'c/c-paired.sh'
             worker.write_bytes(b'NETLAB_IMPLEMENTED_V1\n' + worker.read_bytes())
-            with self.assertRaisesRegex(mod.AuditError, 'unexpectedly marked implemented'):
+            with self.assertRaisesRegex(mod.AuditError, 'implementation marker differs'):
                 mod.audit_source(p)
 
     def test_version_source_is_semver_and_dynamic(self):

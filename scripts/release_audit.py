@@ -24,7 +24,7 @@ SHA_RE = re.compile(r'^[0-9a-fA-F]{64}$')
 REQUIRED = (
     'README.md', 'LICENSE', 'install.sh', 'netlab-c.sh', 'netlab-s.sh',
     'lib/common.sh', 'lib/cli.sh', 'lib/runner.sh', 'lib/installer.py',
-    'lib/updater.py', 'lib/report.py', 'lib/result_browser.py',
+    'lib/updater.py', 'lib/report.py', 'lib/result_browser.py', 'lib/s_inventory.py',
     'scripts/release_audit.py', 'tests/test-c07-all.sh',
     'docs/implementation-c07.md', '.github/workflows/ci.yml',
     'defaults/c.conf', 'defaults/targets.conf', 'defaults/s.conf',
@@ -34,6 +34,7 @@ WORKERS = (
     'c/c-proxy.sh', 'c/c-collect.sh', 's/s-inventory.sh',
     's/s-toolbox.sh', 's/s-service.sh', 's/s-scheduler.sh',
 )
+IMPLEMENTED_WORKERS = ('s/s-inventory.sh',)  # D01; other eight remain Skeleton
 MAX_ZIP_BYTES = 64 * 1024 * 1024
 MAX_UNPACK_BYTES = 256 * 1024 * 1024
 MAX_MEMBERS = 2000
@@ -78,8 +79,8 @@ def audit_source(root):
     validate_readme((root / 'README.md').read_text('utf-8'), ver)
     for name in WORKERS:
         content = (root / name).read_bytes()[:1024]
-        check(b'NETLAB_IMPLEMENTED_V1' not in content,
-              'Skeleton worker unexpectedly marked implemented: ' + name)
+        check((b'NETLAB_IMPLEMENTED_V1' in content) == (name in IMPLEMENTED_WORKERS),
+              'Worker implementation marker differs from reviewed D01 roster: ' + name)
     # Only invoke the version-only entrypoints; they never probe or mutate.
     for role in ('c', 's'):
         p = subprocess.run(['bash', str(root / ('netlab-' + role + '.sh')), '--version'],
@@ -157,8 +158,8 @@ def inspect_zip(blob, tag):
         check('v' + actual == tag, 'Release Tag differs from ZIP source NETLAB_VERSION')
         validate_readme(z.read(names['README.md']).decode('utf-8'), actual)
         for name in WORKERS:
-            check(b'NETLAB_IMPLEMENTED_V1' not in z.read(names[name])[:1024],
-                  'Release worker unexpectedly marked implemented: ' + name)
+            check((b'NETLAB_IMPLEMENTED_V1' in z.read(names[name])[:1024]) == (name in IMPLEMENTED_WORKERS),
+                  'Release worker implementation marker differs from reviewed D01 roster: ' + name)
     return actual
 
 
@@ -208,7 +209,7 @@ def main(argv=None):
     root = Path(args.source).resolve()
     try:
         ver = audit_source(root)
-        print('[PASS] C07 source, README, CLI version and nine Skeleton workers: v' + ver, flush=True)
+        print('[PASS] C07 source, README, CLI version and eight Skeleton workers and one D01 inventory: v' + ver, flush=True)
         if args.asset or args.online:
             check(args.tag == 'v' + ver, 'source NETLAB_VERSION differs from requested Release Tag')
         if args.asset:

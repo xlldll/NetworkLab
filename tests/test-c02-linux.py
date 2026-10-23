@@ -134,9 +134,10 @@ def acceptance(keep=False):
         unknown = run([launcher, 'not-a-real-command'], env)
         check(unknown.returncode == 2, 'bad public CLI command returns usage code 2')
         placeholder = run([launcher, 'inventory', '--non-interactive'], env)
-        check(placeholder.returncode == 8, 'unimplemented module returns code 8')
-        check(not any((lab / 'results').rglob('*.json')),
-              'placeholder did not publish fabricated reports')
+        check(placeholder.returncode == 0, 'D01 read-only inventory returns code 0')
+        manifests = list((lab / 'results').rglob('*-manifest-*.json'))
+        check(len(manifests) == 1 and json.loads(manifests[0].read_text())['synthetic'] is False,
+              'D01 publishes an observed, non-synthetic local report')
 
         stored_log = lab / 'logs' / 'c02-retention-sentinel.log'
         stored_report = lab / 'results' / 'c02-retention-sentinel.txt'

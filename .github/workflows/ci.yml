@@ -4,7 +4,7 @@ name: NetworkLab CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'phase-d/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -39,8 +39,10 @@ jobs:
         run: python -m pip install 'jsonschema>=4,<5' 'PyYAML>=6,<7'
       - name: C06 static CI contract
         run: sh tests/test-c06-all.sh
-      - name: C07 Skeleton release readiness (offline)
+      - name: C07 release readiness (offline; D01 mixed worker roster)
         run: sh tests/test-c07-all.sh
+      - name: D01 S Inventory offline contract
+        run: sh tests/test-d01-all.sh
       - name: B01-B11 core regression (synthetic only)
         run: bash tests/test-b11-all.sh
       - name: B12 installer regression (isolated)

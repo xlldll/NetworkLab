@@ -21,6 +21,11 @@ class B06Tests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='netlab-b06-')
         self.root = Path(self.temp.name) / 'app'
         shutil.copytree(BASE, self.root, ignore=shutil.ignore_patterns('__pycache__'))
+        # D01: restore historical placeholder in isolated test copy only.
+        stub = (self.root / 's/s-inventory.sh').read_text('utf-8')
+        stub = stub.replace('# NETLAB_IMPLEMENTED_V1.', '# NETLAB_PLACEHOLDER_V1.')
+        stub = stub.replace('lib/s_inventory.py', 'lib/module_entry.py" --module-id "$NETLAB_MODULE_ID')
+        (self.root / 's/s-inventory.sh').write_text(stub, encoding='utf-8')
         self.home = Path(self.temp.name) / 'home'
         cfg = self.home / 'config'
         cfg.mkdir(parents=True)

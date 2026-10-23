@@ -105,7 +105,19 @@ with tempfile.TemporaryDirectory(prefix="netlab-b03-b04-") as temp:
         result = cli(role, env=env)
         check(role + " no-TTY usage 2", result.returncode == 2)
         result = cli(role, "inventory", env=env)
-        check(role + " inventory stub exit 8", result.returncode == 8 and "NOT_IMPLEMENTED" in result.stderr)
+        if role == "c":
+            # C inventory is still an unimplemented Skeleton module.
+            check("c inventory stub exit 8", result.returncode == 8 and "NOT_IMPLEMENTED" in result.stderr)
+        elif sys.platform.startswith("linux"):
+            # D01 S inventory performs real local OS reads without network I/O.
+            check("s inventory real Linux completion", result.returncode == 0 and
+                  "s-inventory: local snapshot captured" in result.stdout,
+                  (result.returncode, result.stderr[-300:]))
+        else:
+            # macOS may run S CLI contract fixtures, not Linux-only system reads.
+            check("s inventory non-Linux refuses with 4", result.returncode == 4 and
+                  "Linux required" in result.stderr,
+                  (result.returncode, result.stderr[-300:]))
         rc, output = tty(role, "0\n", env)
         check(role + " main 0 exit", rc == 0 and "主選單" in output, (rc, output[-400:]))
         rc, output = tty(role, "\x04", env)

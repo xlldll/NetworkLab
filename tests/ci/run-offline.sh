@@ -15,4 +15,5 @@ case "${1:-}" in
 esac
 sh tests/test-c04-all.sh
 sh tests/test-c05-all.sh
+sh tests/test-d01-all.sh
 printf '\n[C06] distribution offline acceptance PASS: %s\n' "$1"
