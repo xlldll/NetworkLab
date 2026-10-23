@@ -269,7 +269,7 @@ netlab_menu_simple_submenu() {
         if netlab_menu_prompt '指定版本（如 v0.1.1；0 返回）: '; then
           case "$NETLAB_MENU_REPLY" in ''|0) ;; *)
             local requested_version="$NETLAB_MENU_REPLY"
-            printf '更新為 %s，來源必須經固定 Release 驗證；目前不執行安裝。\n' "$requested_version"
+            printf '準備更新為 %s，將從配置的可信 GitHub Release 取得版本並驗證 SHA-256。\n' "$requested_version"
             if netlab_menu_confirm; then netlab_menu_invoke "$role" update apply --version "$requested_version"; fi ;;
           esac
         fi ;;

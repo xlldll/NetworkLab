@@ -78,6 +78,19 @@ netlab_runner_dispatch() {
     python3 -S "$NETLAB_APP_ROOT/lib/result_browser.py" "${args[@]}"
     return $?
   fi
+  # B13: update manager is a separate administrative action, not a test Run.
+  if [ "$cmd" = update ]; then
+    if ! netlab_check_command python3; then
+      netlab_error 'Python3 required for pinned Release updates'
+      return "$NETLAB_EXIT_DEPENDENCY"
+    fi
+    args=( --root "$NETLAB_APP_ROOT" --role "$role" --action "${NETLAB_CLI_ACTION:-}" )
+    [ -n "${NETLAB_CLI_UPDATE_VERSION:-}" ] && args+=(--version "$NETLAB_CLI_UPDATE_VERSION")
+    [ "${NETLAB_CLI_QUIET:-0}" -eq 1 ] && args+=(--quiet)
+    [ "${NETLAB_CLI_DRY_RUN:-0}" -eq 1 ] && args+=(--dry-run)
+    python3 -B -S "$NETLAB_APP_ROOT/lib/updater.py" "${args[@]}"
+    return $?
+  fi
   case "$role:$cmd" in
     c:inventory) module=c-inventory ;;
     c:standalone) module=c-standalone ;;
