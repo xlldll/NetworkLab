@@ -3,7 +3,7 @@
 # Compatible with Bash 3.2 (macOS default) and newer Bash.
 # This file contains trusted application code; NEVER source user config files.
 
-NETLAB_VERSION='0.1.0'
+NETLAB_VERSION='0.1.1'
 NETLAB_CLI_CONTRACT_VERSION='1'
 NETLAB_EXIT_SUCCESS=0
 NETLAB_EXIT_USAGE=2
