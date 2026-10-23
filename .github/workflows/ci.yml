@@ -1,0 +1,88 @@
+# NetworkLab C06: isolated, synthetic-only regression suite.
+# No VPS credentials, privileged execution, releases or live network probes.
+name: NetworkLab CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: networklab-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+        python: ['3.11']
+    steps:
+      - name: Checkout exact workflow commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install test-only schema and YAML validators
+        run: python -m pip install 'jsonschema>=4,<5' 'PyYAML>=6,<7'
+      - name: C06 static CI contract
+        run: sh tests/test-c06-all.sh
+      - name: B01-B11 core regression (synthetic only)
+        run: bash tests/test-b11-all.sh
+      - name: B12 installer regression (isolated)
+        run: python3 -B tests/test-b12.py
+      - name: B13 updater regression (mock Release only)
+        run: python3 -B tests/test-b13.py
+      - name: C04 CLI / configuration contract
+        run: sh tests/test-c04-all.sh
+      - name: C05 report / failure recovery
+        run: sh tests/test-c05-all.sh
+      - name: C01 macOS acceptance
+        if: matrix.os == 'macos-15'
+        run: python3 -B tests/test-c01-macos.py
+      - name: C02 Ubuntu acceptance
+        if: matrix.os == 'ubuntu-24.04'
+        run: bash tests/test-c02-all.sh
+
+  distributions:
+    name: ${{ matrix.distro }} / offline container
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [debian12, alpine321]
+    steps:
+      - name: Checkout exact workflow commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build distribution test image (dependencies only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull --file "tests/ci/Dockerfile.${{ matrix.distro }}" \
+            --tag "networklab-ci-${{ matrix.distro }}" tests/ci
+      - name: Execute tests with all container networking disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network none --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --pids-limit 512 \
+            --mount "type=bind,src=${GITHUB_WORKSPACE},dst=/repo,readonly" \
+            --workdir /repo \
+            "networklab-ci-${{ matrix.distro }}" \
+            sh tests/ci/run-offline.sh "${{ matrix.distro }}"
