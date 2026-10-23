@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import stat
@@ -26,7 +27,7 @@ def archive(version='v0.1.1', broken=False, wrapping=False):
     bio = io.BytesIO()
     with zipfile.ZipFile(bio, 'w', zipfile.ZIP_DEFLATED) as z:
         for base, ds, fs in os.walk(ROOT):
-            ds[:] = [d for d in ds if d != '__pycache__']
+            ds[:] = [d for d in ds if d not in ('__pycache__', '.git')]
             for name in fs:
                 file = Path(base) / name
                 if file.is_symlink():
@@ -36,7 +37,11 @@ def archive(version='v0.1.1', broken=False, wrapping=False):
                     continue
                 content = file.read_bytes()
                 if rel == 'lib/common.sh':
-                    content = content.replace(b"NETLAB_VERSION='0.1.0'", ("NETLAB_VERSION='%s'" % version.lstrip('v')).encode('ascii'))
+                    content, count = re.subn(rb"(?m)^NETLAB_VERSION='[^']+'$",
+                                             ("NETLAB_VERSION='%s'" % version.lstrip('v')).encode('ascii'),
+                                             content)
+                    if count != 1:
+                        raise AssertionError('release fixture must declare exactly one version')
                 if broken and rel == 'lib/self_test.py':
                     content = b'raise SystemExit(5)\n'
                 z.writestr(('NetworkLab/' if wrapping else '') + rel, content)
@@ -54,6 +59,15 @@ class B13Tests(unittest.TestCase):
                            stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=40)
         self.assertEqual(p.returncode, 0, p.stdout+p.stderr)
         self.app = self.home/'app'
+        # Simulate a v0.1.0 installation even if the checked-out source is
+        # v0.1.1 or later. An actual upgrade must occur in lifecycle tests.
+        base = self.app / 'lib/common.sh'
+        previous = base.read_bytes()
+        previous, count = re.subn(rb"(?m)^NETLAB_VERSION='[^']+'$",
+                                  b"NETLAB_VERSION='0.1.0'", previous)
+        self.assertEqual(count, 1, 'installed fixture version must be unique')
+        base.write_bytes(previous)
+        self.assertEqual(updater.app_version(self.app), 'v0.1.0')
         (self.home/'config/update-source.json').write_text(json.dumps({'github_repo': 'example/NetworkLab'}))
         (self.home/'config/update-source.json').chmod(0o600)
         self.original = (self.app/'lib/common.sh').read_bytes()

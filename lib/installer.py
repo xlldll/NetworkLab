@@ -309,7 +309,7 @@ def main():
         print('[NetworkLab] command: %s' % dest)
         if str(bindir) not in os.environ.get('PATH', '').split(os.pathsep):
             print('[NetworkLab] PATH NOTICE: add this directory to PATH if desired: %s' % bindir)
-        print('[NetworkLab] v0.1.0: no live probes, timers, services or remote updates were run')
+        print('[NetworkLab] No live probes, timers, services or remote updates were run')
         return 0
     except InstallError as exc:
         print('[NetworkLab] %s (%d): %s' % (

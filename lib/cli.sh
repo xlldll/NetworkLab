@@ -248,7 +248,13 @@ netlab_cli_parse() {
   NETLAB_CLI_ID="$id"
 
   allowed="$(netlab_cli_allowed_flags "$role" "$command" "$action")"
-  set -- "${option_tokens[@]}"
+  # macOS system Bash 3.2 with nounset (set -u) may treat an empty
+  # array expansion as unset. Never expand option_tokens[@] when empty.
+  if [ "${#option_tokens[@]}" -eq 0 ]; then
+    set --
+  else
+    set -- "${option_tokens[@]}"
+  fi
   while [ "$#" -gt 0 ]; do
     key="$1"; shift
     case "$key" in
@@ -342,8 +348,8 @@ netlab_cli_print_help() {
   local role="${1:-${NETLAB_CLI_ROLE:-c}}"
   local route="${NETLAB_CLI_COMMAND:-}" action="${NETLAB_CLI_ACTION:-}"
   if [ "$role" = c ]; then
+    printf 'NetworkLab Client v%s\n' "$NETLAB_VERSION"
     cat <<'USAGE'
-NetworkLab Client v0.1.0
 Usage: netlab-c [command] [subcommand-or-id] [options]
 Commands: inventory, standalone, paired, proxy, collect,
           targets (list|show ID|add|edit|validate),
@@ -355,8 +361,8 @@ Options (where applicable): --profile quick|standard|deep,
 See docs/commands.md for the full per-command option contract.
 USAGE
   else
+    printf 'NetworkLab Server v%s\n' "$NETLAB_VERSION"
     cat <<'USAGE'
-NetworkLab Server v0.1.0
 Usage: netlab-s [command] [subcommand-or-id] [options]
 Commands: inventory, toolbox, service (status|start|stop),
           schedule (list|add|edit JOB_ID|enable JOB_ID|disable JOB_ID|

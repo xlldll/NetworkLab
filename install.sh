@@ -5,7 +5,7 @@ set -eu
 
 usage() {
   cat <<'EOF'
-NetworkLab v0.1.0 offline installer
+NetworkLab offline installer (version: see netlab-c/s --version)
 Usage: sh install.sh [--role auto|c|s] [--bin-dir ABSOLUTE_PATH] [--dry-run] [--skip-self-test] [--help]
 
   --role auto         macOS -> Client, Linux -> Server (default)

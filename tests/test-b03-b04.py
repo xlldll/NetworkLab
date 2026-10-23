@@ -2,6 +2,7 @@
 """B03/B04 read-only CLI/menu integration tests using a real pseudo terminal."""
 import os
 import pty
+import re
 import select
 import subprocess
 import sys
@@ -10,6 +11,12 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Version is determined from the source tree under test, not frozen to B03.
+source = (ROOT / 'lib/common.sh').read_text(encoding='utf-8')
+match = re.search(r"(?m)^NETLAB_VERSION='([^']+)'$", source)
+if not match:
+    raise SystemExit('NETLAB_VERSION missing from lib/common.sh')
+EXPECTED_VERSION = match.group(1)
 passed = 0
 failed = 0
 
@@ -93,7 +100,8 @@ with tempfile.TemporaryDirectory(prefix="netlab-b03-b04-") as temp:
         result = cli(role, "--help", env=env)
         check(role + " help", result.returncode == 0 and expected in result.stdout)
         result = cli(role, "--version", env=env)
-        check(role + " version", result.returncode == 0 and "0.1.0" in result.stdout)
+        check(role + " version", result.returncode == 0 and
+              ("NetworkLab v%s (CLI contract" % EXPECTED_VERSION) in result.stdout)
         result = cli(role, env=env)
         check(role + " no-TTY usage 2", result.returncode == 2)
         result = cli(role, "inventory", env=env)
