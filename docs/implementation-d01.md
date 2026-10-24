@@ -83,21 +83,42 @@ separately. Do not publish a new Tag/Release until CI and applicable field tests
 - Process names are not authenticated service health; use `s-service` when implemented.
 - D02 should implement macOS-side interface / route / hotspot / proxy environment inventory.
 
-## 7. Staged field acceptance (Mac → Alpine → Debian)
+## 7. Manual field acceptance (Mac → Alpine → Debian)
 
-Do not merge the feature branch before CI and all applicable field steps PASS.
-The branch `phase-d/d01-s-inventory` triggers offline GitHub CI on push.
-Run each platform's script from a checkout of the **same commit SHA**.
+D01 core acceptance was executed on the same commit
+`4ef238b9015a73f8ead38c1ef2e973b3e1b75cde`:
 
-- macOS: `sh tests/test-d01-macos.sh` performs only client-side
-  compatibility and synthetic contract checks. The Linux-only D01 integration
-  test is expected to be SKIPPED.
-- Alpine 3.21: `sh tests/test-d01-alpine.sh` verifies real Linux S inventory
-  using a temporary NETLAB_HOME and Alpine/OpenRC safety constraints.
-- Debian 12: `sh tests/test-d01-debian.sh` verifies the same real worker
-  through Debian acceptance and report checks.
+- macOS: contract suite PASS, one Linux-only integration SKIP as designed.
+- Alpine 3.21.8: six D01 core tests PASS; previous wrapper rejected `3.21.8`
+  because it compared the full version string with `3.21`.
+- Debian 12: six D01 core tests PASS.
 
-Record: Git commit SHA, OS/release, command, full exit code and full test
-output. A successful GitHub CI run is not proof of field acceptance.
-Do not run arbitrary iperf3, service operations, root commands, or live probes
-as part of D01. Preserve the user’s existing NetworkLab data.
+This evidence is **core acceptance**. It is not an acceptance of installed-app
+service orchestration, active network tests, or the old full distro suites.
+
+The standard field command for all three platforms is:
+
+```sh
+sh tests/test-d01.sh
+```
+
+The entrypoint auto-detects the platform, records the actual release and Git
+commit, runs only D01's six tests by default, displays a concise summary and
+writes a full private log to the host temporary directory. A different minor
+release in the same OS family is allowed and marked as outside the reference
+version rather than being incorrectly rejected; only Mac, Alpine and Debian
+are D01's supported acceptance families. Prior per-platform entrypoints remain
+as wrappers. Opt in to full historical regression only if needed:
+
+```sh
+sh tests/test-d01.sh --full
+```
+
+D01's tests use real read-only local Linux observations in an isolated Runner
+workspace. They do not perform network probes or change services. Report
+sharing can expose host IPs and should be reviewed first.
+
+GitHub CI is **not required** for this D01 field-acceptance decision. Disable
+NetworkLab CI in GitHub Actions settings if automatic runs are unwanted;
+changing the local test entrypoint does not change existing workflow triggers.
+The old v0.1.1 tag and the eight remaining placeholders are unchanged.

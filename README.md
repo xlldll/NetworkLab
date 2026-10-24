@@ -78,19 +78,25 @@ macOS 預設安裝 C 端，Linux 預設安裝 S 端。程式位於 `~/.networkla
 
 完整更新需要已安裝的 `app/`、公開且非 Draft／Pre-release 的 GitHub Release，以及 `networklab-vX.Y.Z.zip` 與其 `.sha256` 兩份資產。`--dry-run` 不會下載或切換程式。**Git Tag 應視為不可變**；後續修補應建立新版本，而非移動舊 Tag。
 
-## 品質驗收
+## 品質驗收（D01 手動實機為準）
 
-NetworkLab 採用雙層驗收：
-
-1. **GitHub CI**：驗證程式碼、測試契約、模擬故障與相容性，不執行真實 VPS 測速。
-2. **Mac／VPS 實機**：驗證安裝、權限、實際系統服務、未來測量 Worker 與真實網路表現。
-
-CI 全綠只能證明程式碼驗收符合當前測試範圍，不代表實際線路品質通過。
+D01 採用 **實機核心測試** 作為驗收依據，不要求 GitHub CI。
+三個平台均可執行同一條命令，會自動辨識 macOS／Alpine／Debian，
+輸出摘要，保留完整私有日誌供失敗時檢查：
 
 ```sh
-sh tests/test-c06-all.sh
-sh tests/test-c07-all.sh
+sh tests/test-d01.sh
 ```
+
+Linux 會驗證真實的本機 S Inventory 與非合成報告；macOS 只驗證契約，
+Linux 專屬整合測試為預期 SKIP。預設不重跑歷史 B/C 系列完整回歸；
+僅在共用架構變更後才選擇 `sh tests/test-d01.sh --full`。
+舊平台入口 `test-d01-macos.sh`、`test-d01-alpine.sh`、`test-d01-debian.sh`
+仍可使用，預設行為與統一入口一致。
+
+GitHub Actions 工作流程目前仍留在儲存庫作為歷史驗證配置。
+**停止自動執行需要在 GitHub Actions 介面停用 NetworkLab CI 工作流程**；
+單純修改本機驗收腳本不會關閉遠端 CI。
 
 詳細實作、限制與發布門檻請閱讀 `docs/implementation-c07.md`、`docs/commands.md` 和 `docs/architecture.md`。
 
