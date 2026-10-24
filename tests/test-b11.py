@@ -52,6 +52,27 @@ class SelfTestTests(unittest.TestCase):
         self.assertIn('SELF_TEST PASS (S)', p.stdout)
         self.check_unchanged()
 
+    def test_server_self_test_never_executes_actual_inventory(self):
+        # The fixture is implemented on purpose. B11 must replace it in its own
+        # isolated copy before testing the NOT_IMPLEMENTED contract.
+        app = self.sandbox / 'instrumented-app'
+        app.mkdir()
+        for folder in ('lib', 'c', 's', 'schemas'):
+            (app / folder).mkdir()
+            for source in (ROOT / folder).iterdir():
+                if source.is_file() and not source.is_symlink() and source.suffix in ('.py', '.sh', '.json'):
+                    shutil.copyfile(source, app / folder / source.name)
+        for entry in ('netlab-c.sh', 'netlab-s.sh'):
+            shutil.copyfile(ROOT / entry, app / entry)
+        worker = app / 's' / 's-inventory.sh'
+        worker.write_text('#!/usr/bin/env bash\n# NETLAB_IMPLEMENTED_V1\nexit 97\n', encoding='utf-8')
+        original = worker.read_bytes()
+        p = self.run_command('s', '--non-interactive', app=app)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn('SELF_TEST PASS (S)', p.stdout)
+        self.assertEqual(worker.read_bytes(), original)
+        self.check_unchanged()
+
     def test_quiet_is_compact(self):
         p = self.run_command('c', '--quiet')
         self.assertEqual(p.returncode, 0, p.stderr)

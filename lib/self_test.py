@@ -62,6 +62,28 @@ def make_isolated_copy(source, destination):
         shutil.copyfile(p, destination / entry)
 
 
+def install_placeholder_fixture(app, role):
+    """Replace inventory only in B11's disposable app for the stub check.
+
+    An implemented S Inventory must not be executed by an offline skeleton
+    self-test. This local-only fixture also preserves the internal guard test.
+    """
+    ensure(role in ('c', 's'), 'invalid B11 fixture role')
+    worker = app / role / ('%s-inventory.sh' % role)
+    ensure(worker.is_file() and not worker.is_symlink(), 'missing inventory worker')
+    content = '''#!/usr/bin/env bash
+# NETLAB_PLACEHOLDER_V1 (B11 disposable offline fixture only)
+if [ "${NETLAB_INTERNAL_WORKER:-}" = "1" ]; then
+  NETLAB_TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || exit 5
+  exec python3 -S "$NETLAB_TEST_ROOT/lib/module_entry.py" --module-id ROLE-inventory
+fi
+printf '%s\n' '[NetworkLab] B11 fixture: NOT_IMPLEMENTED (8)' >&2
+exit 8
+'''
+    worker.write_text(content.replace('ROLE-inventory', role + '-inventory'), encoding='utf-8')
+    worker.chmod(0o700)
+
+
 def install_synthetic_worker(app, role):
     """Replaces inventory worker ONLY inside disposable test installation."""
     worker = app / role / ('%s-inventory.sh' % role)
@@ -157,6 +179,7 @@ def run_checks(source, role, quiet):
         app.mkdir(mode=0o700)
         home.mkdir(mode=0o700)
         make_isolated_copy(source, app)
+        install_placeholder_fixture(app, role)
         sample_config(home)
         env = dict(os.environ)
         for variable in ('NETLAB_INTERNAL_WORKER', 'NETLAB_CONTEXT_FILE', 'NETLAB_WORK_DIR',
