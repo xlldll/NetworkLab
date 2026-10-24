@@ -36,14 +36,15 @@ class RunnerTests(unittest.TestCase):
                               capture_output=True, text=True, timeout=timeout)
 
     def test_public_entry_and_direct_module(self):
-        # B05 checks historical placeholder routing. Replace only the worker
-        # in the isolated test copy; production D01 s-inventory is unchanged.
-        stub = self.root / 's' / 's-inventory.sh'
-        stub.write_text(
-            '#!/usr/bin/env bash\n'
-            '# B05 isolated placeholder fixture (no implemented marker)\n'
-            'exec bash "$(dirname "$0")/../netlab-s.sh" inventory "$@"\n',
-            encoding='utf-8')
+        # B05 checks historical placeholders in an isolated application copy.
+        # Never launch D01/D02 real inventory as a synthetic routing fixture.
+        for role in ('c', 's'):
+            stub = self.root / role / (role + '-inventory.sh')
+            stub.write_text(
+                '#!/usr/bin/env bash\n'
+                '# B05 isolated placeholder fixture (no implemented marker)\n'
+                'exec bash "$(dirname "$0")/../netlab-' + role + '.sh" inventory "$@"\n',
+                encoding='utf-8')
         for role, module in (('c', 'inventory'), ('s', 'inventory'), ('c', 'proxy'), ('s', 'toolbox')):
             with self.subTest(role=role, module=module):
                 p = self.cli(role, module, '--non-interactive')

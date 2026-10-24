@@ -50,6 +50,11 @@ class ReportTests(unittest.TestCase):
         stub = stub.replace('# NETLAB_IMPLEMENTED_V1.', '# NETLAB_PLACEHOLDER_V1.')
         stub = stub.replace('lib/s_inventory.py', 'lib/module_entry.py" --module-id "$NETLAB_MODULE_ID')
         (self.root / 's/s-inventory.sh').write_text(stub, encoding='utf-8')
+        # D02: restore C inventory placeholder in this disposable legacy fixture.
+        cstub = (self.root / 'c/c-inventory.sh').read_text('utf-8')
+        cstub = cstub.replace('# NETLAB_IMPLEMENTED_V1.', '# NETLAB_PLACEHOLDER_V1.')
+        cstub = cstub.replace('lib/c_inventory.py', 'lib/module_entry.py" --module-id "$NETLAB_MODULE_ID')
+        (self.root / 'c/c-inventory.sh').write_text(cstub, encoding='utf-8')
         self.home = Path(self.tmp.name) / 'home'
         config = self.home / 'config'
         config.mkdir(parents=True)

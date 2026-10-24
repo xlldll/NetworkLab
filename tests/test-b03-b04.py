@@ -107,8 +107,14 @@ with tempfile.TemporaryDirectory(prefix="netlab-b03-b04-") as temp:
         check(role + " no-TTY usage 2", result.returncode == 2)
         result = cli(role, "inventory", env=env)
         if role == "c":
-            # C inventory is still an unimplemented Skeleton module.
-            check("c inventory stub exit 8", result.returncode == 8 and "NOT_IMPLEMENTED" in result.stderr)
+            if sys.platform == 'darwin':
+                check("c inventory real macOS completion", result.returncode == 0 and
+                      "c-inventory: local snapshot captured" in result.stdout,
+                      (result.returncode, result.stderr[-300:]))
+            else:
+                check("c inventory macOS-only rejects this host", result.returncode == 4 and
+                      "macOS required" in result.stderr,
+                      (result.returncode, result.stderr[-300:]))
         elif sys.platform.startswith("linux"):
             # D01 S inventory performs real local OS reads without network I/O.
             check("s inventory real Linux completion", result.returncode == 0 and
@@ -125,7 +131,11 @@ with tempfile.TemporaryDirectory(prefix="netlab-b03-b04-") as temp:
         check(role + " EOF exit", rc == 0, (rc, output[-400:]))
 
     rc, output = tty("c", "9\n\n1\n0\n", env)
-    check("C invalid/Enter remains idle/inventory dispatch", rc == 0 and "無效輸入" in output and "NOT_IMPLEMENTED" in output and "CLI: netlab-c inventory" in output)
+    # The C inventory command can now run on macOS; the test is about menu dispatch.
+    expected_fragment = "local snapshot captured" if sys.platform == 'darwin' else "macOS required"
+    check("C invalid/Enter remains idle/inventory dispatch", rc == 0 and
+          "無效輸入" in output and expected_fragment in output and
+          "CLI: netlab-c inventory" in output)
     rc, output = tty("c", "6\n1\n0\n0\n", env)
     check("C targets submenu", rc == 0 and "CLI: netlab-c targets list" in output)
     rc, output = tty("c", "3\n2\n2\n0\n", env)
@@ -178,20 +188,21 @@ with tempfile.TemporaryDirectory(prefix="netlab-b03-b04-") as temp:
     (config / "s.conf").write_text("[general]\nserver_id = test-vps\ndefault_profile = supersonic\n", encoding="utf-8")
     rc, output = tty("s", "2\n1\n0\n", env)
     check("S invalid default profile blocked", rc == 0 and "CONFIG_ERROR (3)" in output and "CLI: netlab-s toolbox" not in output)
-    # In Phase D, the real Linux S inventory may publish a local report.
-    # All other Skeleton CLI/menu flows must remain report-free.
-    if sys.platform.startswith("linux"):
-        manifests = list((home / "results").rglob("*-manifest-*.json"))
-        valid = len(manifests) == 1 and not (home / "results" / "c").exists()
-        if valid:
-            obj = json.loads(manifests[0].read_text(encoding="utf-8"))
-            valid = (obj.get("module_id") == "s-inventory"
-                     and obj.get("status") == "completed"
-                     and obj.get("synthetic") is False
-                     and obj.get("exit_code") == 0)
-        check("Only non-synthetic D01 S Inventory generated a report", valid)
+    # Only the platform's implemented Inventory may publish a local report.
+    manifests = list((home / "results").rglob("*-manifest-*.json"))
+    if sys.platform.startswith('linux'):
+        expected_module = 's-inventory'
+    elif sys.platform == 'darwin':
+        expected_module = 'c-inventory'
     else:
-        check("No report from non-Linux Skeleton tests", not (home / "results").exists())
+        expected_module = None
+    valid = bool(manifests) if expected_module else not manifests
+    for file in manifests:
+        obj = json.loads(file.read_text(encoding='utf-8'))
+        valid = valid and obj.get('module_id') == expected_module and \
+            obj.get('status') == 'completed' and obj.get('synthetic') is False and \
+            obj.get('exit_code') == 0
+    check('Only implemented platform Inventory generated real reports', valid)
 
 print("B03/B04 tests: %s passed, %s failed" % (passed, failed))
 if failed:
