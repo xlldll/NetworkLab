@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """B03/B04 read-only CLI/menu integration tests using a real pseudo terminal."""
+import json
 import os
 import pty
 import re
@@ -177,8 +178,20 @@ with tempfile.TemporaryDirectory(prefix="netlab-b03-b04-") as temp:
     (config / "s.conf").write_text("[general]\nserver_id = test-vps\ndefault_profile = supersonic\n", encoding="utf-8")
     rc, output = tty("s", "2\n1\n0\n", env)
     check("S invalid default profile blocked", rc == 0 and "CONFIG_ERROR (3)" in output and "CLI: netlab-s toolbox" not in output)
-    # Commands must never modify local configurations or create official reports.
-    check("No test reports created", not (home / "results").exists())
+    # In Phase D, the real Linux S inventory may publish a local report.
+    # All other Skeleton CLI/menu flows must remain report-free.
+    if sys.platform.startswith("linux"):
+        manifests = list((home / "results").rglob("*-manifest-*.json"))
+        valid = len(manifests) == 1 and not (home / "results" / "c").exists()
+        if valid:
+            obj = json.loads(manifests[0].read_text(encoding="utf-8"))
+            valid = (obj.get("module_id") == "s-inventory"
+                     and obj.get("status") == "completed"
+                     and obj.get("synthetic") is False
+                     and obj.get("exit_code") == 0)
+        check("Only non-synthetic D01 S Inventory generated a report", valid)
+    else:
+        check("No report from non-Linux Skeleton tests", not (home / "results").exists())
 
 print("B03/B04 tests: %s passed, %s failed" % (passed, failed))
 if failed:
