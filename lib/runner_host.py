@@ -176,7 +176,15 @@ def preflight(args, home):
         selected = list(DEFAULT_TOOLS if modules == 'all' else modules.split(','))
         if len(set(selected)) != len(selected) or any(m not in TOOL_IDS for m in selected):
             raise RunError(EXIT_USAGE, 'invalid --modules')
-    return dict(config_path=str(cfg_path.resolve()), profile=profile, target=target,
+    tcp_endpoint = None
+    if role == 'c' and args.command == 'standalone':
+        from c_tcp_connect import validate_endpoint
+        try:
+            ip, port, _family = validate_endpoint(args.tcp_ip, args.tcp_port)
+        except ValueError as exc:
+            raise RunError(EXIT_USAGE, str(exc))
+        tcp_endpoint = {'ip': ip, 'port': port}
+    return dict(config_path=str(cfg_path.resolve()), profile=profile, tcp_endpoint=tcp_endpoint, target=target,
                 target_id=target_id, server_id=server_id, selected=selected, server_features=server_features)
 
 
@@ -244,7 +252,8 @@ def make_private_run(home, args, effective):
         },
         'target': effective['target'],
         'effective_parameters': {'action': args.action or None, 'id': args.id or None,
-                                 'server_config': effective.get('server_features', {})},
+                                 'server_config': effective.get('server_features', {}),
+                                 'tcp_endpoint': effective.get('tcp_endpoint')},
     }
     context_path = work / 'context.json'
     try:
@@ -391,6 +400,8 @@ def build_parser():
     parser.add_argument('--config', default='')
     parser.add_argument('--profile', choices=('quick', 'standard', 'deep'), default='')
     parser.add_argument('--target', default='')
+    parser.add_argument('--tcp-ip', default='')
+    parser.add_argument('--tcp-port', type=int, default=0)
     parser.add_argument('--modules', default='')
     parser.add_argument('--output-dir', default='')
     parser.add_argument('--quiet', action='store_true')

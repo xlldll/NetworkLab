@@ -151,6 +151,12 @@ class C07Tests(unittest.TestCase):
         with self.assertRaisesRegex(mod.AuditError, 'implementation marker differs'):
             mod.inspect_zip(make_zip(items), TAG)
 
+    def test_d03_implemented_worker_cannot_lose_marker(self):
+        items = [(n, b'NETLAB_PLACEHOLDER_V1\n' if n == 'c/c-standalone.sh' else b)
+                 for n, b in fixture_files()]
+        with self.assertRaisesRegex(mod.AuditError, 'implementation marker differs'):
+            mod.inspect_zip(make_zip(items), TAG)
+
     def test_cli_requires_pinned_tag_and_asset_pair(self):
         for args in (['--online'], ['--asset', 'example.zip'],
                      ['--tag', 'latest', '--online']):

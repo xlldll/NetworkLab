@@ -24,7 +24,7 @@ SHA_RE = re.compile(r'^[0-9a-fA-F]{64}$')
 REQUIRED = (
     'README.md', 'LICENSE', 'install.sh', 'netlab-c.sh', 'netlab-s.sh',
     'lib/common.sh', 'lib/cli.sh', 'lib/runner.sh', 'lib/installer.py',
-    'lib/updater.py', 'lib/report.py', 'lib/result_browser.py', 'lib/s_inventory.py', 'lib/c_inventory.py',
+    'lib/updater.py', 'lib/report.py', 'lib/result_browser.py', 'lib/s_inventory.py', 'lib/c_inventory.py', 'lib/c_tcp_connect.py',
     'scripts/release_audit.py', 'tests/test-c07-all.sh',
     'docs/implementation-c07.md', '.github/workflows/ci.yml',
     'defaults/c.conf', 'defaults/targets.conf', 'defaults/s.conf',
@@ -34,7 +34,7 @@ WORKERS = (
     'c/c-proxy.sh', 'c/c-collect.sh', 's/s-inventory.sh',
     's/s-toolbox.sh', 's/s-service.sh', 's/s-scheduler.sh',
 )
-IMPLEMENTED_WORKERS = ('s/s-inventory.sh', 'c/c-inventory.sh')  # D01/D02
+IMPLEMENTED_WORKERS = ('s/s-inventory.sh', 'c/c-inventory.sh', 'c/c-standalone.sh')  # D01-D03
 MAX_ZIP_BYTES = 64 * 1024 * 1024
 MAX_UNPACK_BYTES = 256 * 1024 * 1024
 MAX_MEMBERS = 2000

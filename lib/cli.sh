@@ -17,6 +17,8 @@ netlab_cli_reset() {
   NETLAB_CLI_DRY_RUN=0
   NETLAB_CLI_TARGET=''
   NETLAB_CLI_MODULES=''
+  NETLAB_CLI_TCP_IP=''
+  NETLAB_CLI_TCP_PORT=''
   NETLAB_CLI_EDITOR=''
   NETLAB_CLI_LIMIT=''
   NETLAB_CLI_HELP=0
@@ -100,7 +102,9 @@ netlab_cli_allowed_flags() {
   local role="$1" cmd="$2" action="$3"
   case "$cmd:$action" in
     inventory:) printf '%s' '--config --output-dir --non-interactive --quiet --dry-run' ;;
-    standalone:|paired:|proxy:|toolbox:)
+    standalone:)
+      printf '%s' '--profile --tcp-ip --tcp-port --config --output-dir --non-interactive --quiet --dry-run' ;;
+    paired:|proxy:|toolbox:)
       printf '%s' '--profile --config --output-dir --non-interactive --quiet --dry-run'
       [ "$cmd" = paired ] && printf ' %s' '--target'
       [ "$cmd" = toolbox ] && printf ' %s' '--modules' ;;
@@ -137,6 +141,12 @@ netlab_cli_set_option() {
     --non-interactive) NETLAB_CLI_NON_INTERACTIVE=1 ;;
     --quiet) NETLAB_CLI_QUIET=1 ;;
     --dry-run) NETLAB_CLI_DRY_RUN=1 ;;
+    --tcp-ip)
+      if [ -z "$value" ] || [ "${#value}" -gt 64 ]; then netlab_cli_error 'invalid --tcp-ip'; return 2; fi
+      NETLAB_CLI_TCP_IP="$value" ;;
+    --tcp-port)
+      if ! netlab_cli_valid_port "$value"; then netlab_cli_error 'invalid --tcp-port'; return 2; fi
+      NETLAB_CLI_TCP_PORT="$((10#$value))" ;;
     --target)
       if ! netlab_cli_valid_id "$value"; then netlab_cli_error "invalid target ID: $value"; return 2; fi
       NETLAB_CLI_TARGET="$value" ;;
@@ -311,6 +321,10 @@ netlab_cli_parse() {
     esac
   fi
 
+  if [ "$role:$command" = c:standalone ] && { [ -z "$NETLAB_CLI_TCP_IP" ] || [ -z "$NETLAB_CLI_TCP_PORT" ]; }; then
+    netlab_cli_error 'standalone requires explicit --tcp-ip IP --tcp-port PORT (numeric global IP; no DNS)'
+    return 2
+  fi
   if [ "$command" = update ] && [ "$action" = apply ] && [ -z "$NETLAB_CLI_UPDATE_VERSION" ]; then
     netlab_cli_error 'update apply requires --version VERSION'; return 2
   fi
@@ -358,6 +372,7 @@ Commands: inventory, standalone, paired, proxy, collect,
 Options (where applicable): --profile quick|standard|deep,
   --config FILE, --output-dir DIR, --target ID, --non-interactive,
   --quiet, --dry-run, --help, --version.
+Standalone TCP connect: --tcp-ip NUMERIC_IP --tcp-port PORT.
 See docs/commands.md for the full per-command option contract.
 USAGE
   else
@@ -378,6 +393,8 @@ USAGE
 
   # A command-specific appendix does not require any config, tool, or network.
   case "$role:$route:$action" in
+    c:standalone:)
+      printf '\nExample: netlab-c standalone --tcp-ip 1.1.1.1 --tcp-port 443 --profile quick\n' ;;
     c:paired:)
       printf '\nExample: netlab-c paired --target nat-us --profile standard --non-interactive\n' ;;
     c:collect:)

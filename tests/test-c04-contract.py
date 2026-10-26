@@ -211,8 +211,8 @@ def c04(keep=False):
                c_env, 8, 'C valid collect route reaches safe placeholder only')
         expect([c, 'standalone', '--profile', 'invalid'], c_env, 2,
                'C standalone rejects unknown profile')
-        expect([c, 'standalone', '--profile', 'deep', '--non-interactive'], c_env, 8,
-               'C standalone deep selection reaches placeholder')
+        expect([c, 'standalone', '--profile', 'deep', '--non-interactive'], c_env, 2,
+                'C standalone requires explicit TCP destination')
         expect([c, 'config', 'edit', '--dry-run'], c_env, 0, 'C config editor preview is read-only', 'DRY_RUN')
         expect([c, 'targets', 'edit', '--dry-run'], c_env, 0, 'C target editor preview is read-only', 'DRY_RUN')
 
